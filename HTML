@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Sistema Gestão MEI</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f1f3f6;
+margin:0;
+padding:20px;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+h1{
+text-align:center;
+}
+
+.top{
+display:flex;
+gap:10px;
+margin-bottom:20px;
+}
+
+.resumo{
+display:flex;
+justify-content:space-around;
+font-size:18px;
+margin-bottom:20px;
+}
+
+form{
+display:grid;
+grid-template-columns:1fr 1fr 1fr 1fr auto;
+gap:10px;
+margin-bottom:20px;
+}
+
+input,select,button{
+padding:10px;
+}
+
+button{
+background:#2d89ef;
+color:white;
+border:none;
+cursor:pointer;
+}
+
+button:hover{
+background:#1c5fbf;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+border-bottom:1px solid #ddd;
+padding:10px;
+text-align:center;
+}
+
+.receita{
+color:green;
+}
+
+.despesa{
+color:red;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Sistema Gestão MEI</h1>
+
+<div class="top">
+
+<select id="clienteSelect"></select>
+
+<input type="text" id="novoCliente" placeholder="Novo cliente">
+
+<button onclick="addCliente()">Adicionar Cliente</button>
+
+</div>
+
+<div class="resumo">
+<div>Receitas: R$ <span id="receita">0</span></div>
+<div>Despesas: R$ <span id="despesa">0</span></div>
+<div>Saldo: R$ <span id="saldo">0</span></div>
+</div>
+
+<form id="form">
+
+<input type="date" id="data" required>
+<input type="text" id="descricao" placeholder="Descrição" required>
+<input type="number" id="valor" placeholder="Valor" required>
+
+<select id="tipo">
+<option value="receita">Receita</option>
+<option value="despesa">Despesa</option>
+</select>
+
+<button type="submit">Adicionar</button>
+
+</form>
+
+<table>
+
+<thead>
+<tr>
+<th>Data</th>
+<th>Descrição</th>
+<th>Valor</th>
+<th>Tipo</th>
+<th>Ação</th>
+</tr>
+</thead>
+
+<tbody id="lista"></tbody>
+
+</table>
+
+</div>
+
+<script>
+
+let sistema = JSON.parse(localStorage.getItem("sistemaMEI")) || {
+clientes:{}
+}
+
+let clienteAtual = null
+
+function salvar(){
+localStorage.setItem("sistemaMEI",JSON.stringify(sistema))
+}
+
+function atualizarClientes(){
+
+let select = document.getElementById("clienteSelect")
+select.innerHTML=""
+
+for(let nome in sistema.clientes){
+
+let option = document.createElement("option")
+option.value = nome
+option.textContent = nome
+
+select.appendChild(option)
+
+}
+
+if(!clienteAtual){
+clienteAtual = select.value
+}
+
+select.value = clienteAtual
+
+render()
+
+}
+
+document.getElementById("clienteSelect").addEventListener("change",function(){
+
+clienteAtual = this.value
+render()
+
+})
+
+function addCliente(){
+
+let nome = document.getElementById("novoCliente").value
+
+if(!nome) return
+
+sistema.clientes[nome] = []
+
+clienteAtual = nome
+
+document.getElementById("novoCliente").value=""
+
+salvar()
+atualizarClientes()
+
+}
+
+function render(){
+
+let lista = document.getElementById("lista")
+lista.innerHTML=""
+
+if(!clienteAtual) return
+
+let dados = sistema.clientes[clienteAtual]
+
+let receitas=0
+let despesas=0
+
+dados.forEach((item,index)=>{
+
+if(item.tipo==="receita") receitas+=item.valor
+else despesas+=item.valor
+
+let tr=document.createElement("tr")
+
+tr.innerHTML=`
+<td>${item.data}</td>
+<td>${item.descricao}</td>
+<td class="${item.tipo}">R$ ${item.valor.toFixed(2)}</td>
+<td>${item.tipo}</td>
+<td><button onclick="remover(${index})">Excluir</button></td>
+`
+
+lista.appendChild(tr)
+
+})
+
+document.getElementById("receita").innerText=receitas.toFixed(2)
+document.getElementById("despesa").innerText=despesas.toFixed(2)
+document.getElementById("saldo").innerText=(receitas-despesas).toFixed(2)
+
+}
+
+function remover(index){
+
+sistema.clientes[clienteAtual].splice(index,1)
+
+salvar()
+render()
+
+}
+
+document.getElementById("form").addEventListener("submit",function(e){
+
+e.preventDefault()
+
+let data = document.getElementById("data").value
+let descricao = document.getElementById("descricao").value
+let valor = parseFloat(document.getElementById("valor").value)
+let tipo = document.getElementById("tipo").value
+
+sistema.clientes[clienteAtual].push({
+data,
+descricao,
+valor,
+tipo
+})
+
+salvar()
+render()
+
+this.reset()
+
+})
+
+atualizarClientes()
+
+</script>
+
+</body>
+</html>
